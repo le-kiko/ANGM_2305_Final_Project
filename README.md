@@ -34,10 +34,10 @@ interaction and control.
 ## Outcomes
 Ideal Outcome:
 - The ideal outcome for this project would be a space scene that generates
-spaceships, planets, stars, and other celestial bodies while accepting user
-input for the number of planets in the scene, whether some of the planets have
-rings and moons or not, the density of stars in the background, and the general
-color scheme of the scene.
+planets, stars, and other celestial bodies while accepting user input for the
+number of planets in the scene, whether some of the planets have rings and
+moons or not, the density of stars in the background, and the general color
+scheme of the scene.
 
 Minimal Viable Outcome:
 - The minimal viable outcome for this project would be a space scene that
