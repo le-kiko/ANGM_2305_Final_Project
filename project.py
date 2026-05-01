@@ -6,9 +6,27 @@ settings = {
     "num_planets": 5,
     "has_rings": True,
     "has_moons": True,
-    "star_density": 50,
-    "color_scheme": 0
+    "star_density": "Medium",
+    "color_scheme": 0,
+    "stars": []
 }
+
+def update_stars(settings):
+    if settings["star_density"] == "Low":
+        return 100
+    elif settings["star_density"] == "Medium":
+        return 200
+    else:
+        return 400
+
+def generate_stars(settings, width, height):
+    count = update_stars(settings)
+    settings["stars"] = [(random.randint(0, width), random.randint(0, height -
+                         100)) for i in range(count)]
+
+def draw_stars(screen, settings):
+    for star in settings["stars"]:
+        pygame.draw.circle(screen, (255,255,255), star, 1)
 
 def draw_button(screen, font, text, x, y, w, h, mouse, click):
     rect = pygame.Rect(x, y, w, h)
@@ -29,7 +47,7 @@ def draw_button(screen, font, text, x, y, w, h, mouse, click):
 def draw_panel(screen, font, width, height, mouse, click, settings):
     panel_y = height - 80
     pygame.draw.rect(screen, (25, 25, 25), (0, panel_y, width, 80))
-
+    
     x = 30
 
     # -------- planets --------
@@ -63,26 +81,26 @@ def draw_panel(screen, font, width, height, mouse, click, settings):
     x += 160
 
     # -------- stars --------
-    screen.blit(font.render("Stars", True, (200,200,200)), (x, panel_y + 25))
-    x += 60
-
-    if draw_button(screen, font, "-", x, panel_y + 20, 30, 30, mouse, click):
-        settings["star_density"] = max(10, settings["star_density"] - 10)
-    x += 40
-
-    screen.blit(font.render(str(settings["star_density"]), True, (255,255,255))
-                , (x, panel_y + 25))
-    x += 40
-
-    if draw_button(screen, font, "+", x, panel_y + 20, 30, 30, mouse, click):
-        settings["star_density"] = min(200, settings["star_density"] + 10)
-    x += 80
+    if draw_button(screen, font, f"Stars: {settings['star_density']}", x,
+                   panel_y + 20, 150, 30, mouse, click):
+        if settings["star_density"] == "Low":
+            settings["star_density"] = "Medium"
+        elif settings["star_density"] == "Medium":
+            settings["star_density"] = "High"
+        else:
+            settings["star_density"] = "Low"
+        return True
+    x += 170
 
     # -------- color --------
     if draw_button(screen, font,
                    f"Theme {settings['color_scheme']}",
                    x, panel_y + 20, 120, 30, mouse, click):
         settings["color_scheme"] = (settings["color_scheme"] + 1) % 5
+
+def draw_all_elements(screen, font, width, height, mouse, click, settings):
+    draw_stars(screen, settings)
+    draw_panel(screen, font, width, height, mouse, click, settings)
 
 def main():
     pygame.init()
@@ -93,6 +111,8 @@ def main():
                                      pygame.SCALED)
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 20)
+
+    generate_stars(settings, width, height)
 
     running = True
     while running:
@@ -106,7 +126,12 @@ def main():
                 click = True
 
         screen.fill((0,0,0))
-        draw_panel(screen, font, width, height, mouse, click, settings)
+
+        draw_stars(screen, settings)
+        changed = draw_panel(screen, font, width, height, mouse, click, settings)
+        if changed:
+            generate_stars(settings, width, height)
+
         pygame.display.flip()
 
     pygame.quit()
