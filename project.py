@@ -30,6 +30,32 @@ def draw_stars(screen, settings):
     for star in settings["stars"]:
         pygame.draw.circle(screen, (255,255,255), star, 1)
 
+def set_color(settings):
+    scheme = settings["color_schemes"][settings["color_scheme_index"]]
+    if scheme == "Red":
+        return (random.randint(150,255), random.randint(50,100),
+                random.randint(50,100))
+    elif scheme == "Green":
+        return (random.randint(50,100), random.randint(150,255),
+                random.randint(50,100))
+    elif scheme == "Blue":
+        return (random.randint(50,100), random.randint(50,100),
+                random.randint(150,255))
+    elif scheme == "Purple":
+        return (random.randint(120,200), random.randint(50,100),
+                random.randint(150,255))
+    elif scheme == "Grey":
+        grey_color = random.randint(100,200)
+        return (grey_color, grey_color, grey_color)
+    elif scheme == "Random":
+        return (random.randint(50,255), random.randint(50,255),
+                random.randint(50,255))
+    else:
+        natural_colors = [(200,180,120), (150,100,80), (100,150,255),
+                          (180,140,100), (120,200,120), (200,160,120)]
+        chosen = random.choice(natural_colors)
+        return (chosen)
+
 def draw_button(screen, font, text, x, y, w, h, mouse, click, scale):
     def ui(value):
         return int(value * scale)
@@ -129,6 +155,116 @@ def draw_panel(screen, font, width, height, mouse, click, settings, scale):
 
     return None
 
+def add_perspective(x, y, z, cx, cy):
+    scale = 800 / (800 + z)
+    return int(cx + x * scale), int(cy + y * scale), scale
+
+def rotate_y(x, y, z, angle):
+    cos_a, sin_a = math.cos(angle), math.sin(angle)
+    return x * cos_a - z * sin_a, y, x * sin_a + z * cos_a
+
+def draw_sphere(screen, cx, cy, world_x, world_y, world_z, rotation, radius,
+                color):
+    steps = 16
+
+    for i in range(steps):
+        theta = math.pi * i / steps
+        for j in range(steps):
+            phi = 2 * math.pi * j / steps
+
+            x = radius * math.sin(theta) * math.cos(phi)
+            y = radius * math.cos(theta)
+            z = radius * math.sin(theta) * math.sin(phi)
+
+            x, y, z = rotate_y(x, y, z, rotation)
+
+            x += world_x
+            y += world_y
+            z += world_z
+
+            brightness = max(0, (z + radius) / (2 * radius))
+
+            r = max(0, min(255, int(color[0] * brightness)))
+            g = max(0, min(255, int(color[1] * brightness)))
+            b = max(0, min(255, int(color[2] * brightness)))
+            shaded = (r,g,b)
+
+            px, py, scale = add_perspective(x, y, z, cx, cy)
+            pygame.draw.circle(screen, shaded, (px, py), max(1, int(2 *
+                                                                    scale)))
+
+class Moon:
+    def __init__(self, orbit_radius):
+        self.orbit_radius = orbit_radius
+        self.orbit_angle = random.random() * 6
+
+    def update(self):
+        self.orbit_angle += 0.05
+
+    def draw(self, screen, cx, cy, planet_x, planet_y, planet_z, planet_rot):
+        x = planet_x + self.orbit_radius * math.cos(self.orbit_angle)
+        z = planet_z + self.orbit_radius * math.sin(self.orbit_angle)
+
+        draw_sphere(screen, cx, cy, x, planet_y, z, planet_rot, 4,
+                    (200,200,200))
+
+class Planet:
+    def __init__(self, orbit_radius):
+        self.orbit_radius = orbit_radius
+        self.orbit_angle = random.random() * 6
+
+        self.radius = random.randint(10, 25)
+        self.color = set_color(settings)
+
+        self.rotation = 0
+
+        self.moons = [
+            Moon(random.randint(30, 60))
+            for i in range(settings["num_moons"])
+        ]
+
+    def update(self):
+        self.orbit_angle += 0.01
+        self.rotation += 0.02
+
+        for moon in self.moons:
+            moon.update()
+
+    def get_position(self):
+        a = self.orbit_radius
+        b = int(a * 0.75)
+
+        x = a * math.cos(self.orbit_angle)
+        z = b * math.sin(self.orbit_angle)
+
+        y = 25 * math.sin(self.orbit_angle * 2)
+
+        return x, y, z
+
+    def draw(self, screen, cx, cy):
+        x, y, z = self.get_position()
+
+        draw_sphere(screen, cx, cy, x, y, z, self.rotation, self.radius,
+                    self.color)
+
+        if settings["has_rings"]:
+            px, py, unused = add_perspective(x, y, z, cx, cy)
+            pygame.draw.circle(screen, (180,180,120), (px, py), self.radius +
+                               10, 1)
+
+        for moon in self.moons:
+            moon.draw(screen, cx, cy, x, y, z, self.rotation)
+
+def create_planets():
+    return [Planet(120 + i * 80) for i in range(settings["num_planets"])]
+
+def draw_sun(screen, cx, cy):
+    px, py, unused = add_perspective(0, 0, 0, cx, cy)
+
+    for i in range(30, 0, -1):
+        r = int(80 * (i / 30))
+        pygame.draw.circle(screen, (255, 210, 90), (px, py), r)
+
 def main():
     pygame.init()
     info = pygame.display.Info()
@@ -142,6 +278,9 @@ def main():
     font = pygame.font.SysFont("Arial", int(20 * scale))
 
     generate_stars(settings, width, height)
+    planets = create_planets()
+    cx, cy = width // 2, height // 2
+    draw_sun(screen, cx, cy)
 
     running = True
     while running:
@@ -157,18 +296,22 @@ def main():
         screen.fill((0,0,0))
 
         draw_stars(screen, settings)
+        for planet in planets:
+            planet.update()
+            planet.draw(screen, cx, cy)
+
         changed = draw_panel(screen, font, width, height, mouse, click,
                              settings, scale)
         if changed == "planets":
-            pass
+            planets = create_planets()
         elif changed == "rings":
             pass
         elif changed == "moons":
-            pass
+            planets = create_planets()
         elif changed == "stars":
             generate_stars(settings, width, height)
         elif changed == "colors":
-            pass
+            planets = create_planets()
         pygame.display.flip()
 
     pygame.quit()
