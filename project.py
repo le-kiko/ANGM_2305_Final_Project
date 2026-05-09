@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+import time
 
 settings = {
     "num_planets": 5,
@@ -182,15 +183,31 @@ def draw_sphere(screen, cx, cy, world_x, world_y, world_z, rotation, radius,
             y += world_y
             z += world_z
 
-            brightness = max(0, (z + radius) / (2 * radius))
+            nx = x / world_x
+            ny = y / world_y
+            nz = z / world_z
+            nlen = math.sqrt(nx**2 + ny**2 + nz**2)
 
-            r = max(0, min(255, int(color[0] * brightness)))
-            g = max(0, min(255, int(color[1] * brightness)))
-            b = max(0, min(255, int(color[2] * brightness)))
-            shaded = (r,g,b)
+            nx = nx / nlen
+            ny = ny / nlen
+            nz = nz / nlen
 
-            px, py, scale = add_perspective(x, y, z, cx, cy)
-            pygame.draw.circle(screen, shaded, (px, py), max(1, int(2 *
+            light_x = -world_x
+            light_y = -world_y
+            light_z = -world_z
+            light_length = math.sqrt(light_x**2 + light_y**2 + light_z**2)
+
+            light_x /= light_length
+            light_y /= light_length
+            light_z /= light_length
+                
+            brightness = max(0, nx*light_x + ny*light_y + nz*light_z)
+            shaded = (int(color[0] * brightness), int(color[1] * brightness),
+                      int(color[2] * brightness))
+            
+            if brightness > 0.01:
+                px, py, scale = add_perspective(x, y, z, cx, cy)
+                pygame.draw.circle(screen, shaded, (px, py), max(1, int(2 *
                                                                     scale)))
 
 class Moon:
@@ -198,15 +215,15 @@ class Moon:
         self.orbit_radius = orbit_radius
         self.orbit_angle = random.random() * 6
 
-    def update(self):
-        self.orbit_angle += 0.05
+    def update(self, dt):
+        self.orbit_angle += 0.05 * dt
 
     def draw(self, screen, cx, cy, planet_x, planet_y, planet_z, planet_rot):
         x = planet_x + self.orbit_radius * math.cos(self.orbit_angle)
         z = planet_z + self.orbit_radius * math.sin(self.orbit_angle)
 
         draw_sphere(screen, cx, cy, x, planet_y, z, planet_rot, 4,
-                    (200,200,200))
+                    (170,170,170))
 
 class Planet:
     def __init__(self, orbit_radius):
@@ -215,20 +232,17 @@ class Planet:
 
         self.radius = random.randint(10, 25)
         self.color = set_color(settings)
-
+        
         self.rotation = 0
+        self.moons = []
+        self.has_ring = False
 
-        self.moons = [
-            Moon(random.randint(30, 60))
-            for i in range(settings["num_moons"])
-        ]
-
-    def update(self):
-        self.orbit_angle += 0.01
-        self.rotation += 0.02
+    def update(self, dt):
+        self.orbit_angle += 0.01 * dt
+        self.rotation += 0.02 * dt
 
         for moon in self.moons:
-            moon.update()
+            moon.update(dt)
 
     def get_position(self):
         a = self.orbit_radius
@@ -243,27 +257,58 @@ class Planet:
 
     def draw(self, screen, cx, cy):
         x, y, z = self.get_position()
-
+        
         draw_sphere(screen, cx, cy, x, y, z, self.rotation, self.radius,
                     self.color)
 
-        if settings["has_rings"]:
-            px, py, unused = add_perspective(x, y, z, cx, cy)
-            pygame.draw.circle(screen, (180,180,120), (px, py), self.radius +
-                               10, 1)
+        if settings["has_rings"] and self.has_ring:
+            px, py, scale = add_perspective(x, y, z, cx, cy)
+            
+            ring_w = int((self.radius + 16) * scale)
+            ring_h = int((self.radius + 6) * scale)
+            ring_rect = pygame.Rect(px - ring_w, py - ring_h // 2, ring_w * 2,
+                                    ring_h)
+
+            pygame.draw.ellipse(screen, (190,180,140), ring_rect, 2)
+            pygame.draw.ellipse(screen, (140,130,100), ring_rect.inflate(
+                    -10, -4), 1)
 
         for moon in self.moons:
             moon.draw(screen, cx, cy, x, y, z, self.rotation)
 
+def get_planet_depth(planet):
+    return planet.get_position()[2]
+
+def get_depth(obj):
+    return obj[1]
+
 def create_planets():
-    return [Planet(120 + i * 80) for i in range(settings["num_planets"])]
+    planets = [Planet(120 + i * 80) for i in range(settings["num_planets"])]
+
+    if settings["has_rings"] and len(planets) > 0:
+        ring_count = random.randint(1, min(2, len(planets)))
+        ring_planets = random.sample(planets, ring_count)
+
+        for planet in ring_planets:
+            planet.has_ring = True
+
+    remaining_moons = settings["num_moons"]
+    while remaining_moons > 0:
+        planet = random.choice(planets)
+        planet.moons.append(Moon(random.randint(30,60)))
+        remaining_moons -= 1
+
+    return planets
 
 def draw_sun(screen, cx, cy):
     px, py, unused = add_perspective(0, 0, 0, cx, cy)
 
-    for i in range(30, 0, -1):
-        r = int(80 * (i / 30))
-        pygame.draw.circle(screen, (255, 210, 90), (px, py), r)
+    for i in range(60, 0, -1):
+        alpha = i / 60
+        color = (int(255 * alpha), int(180 * alpha), int(60 * alpha))
+        pygame.draw.circle(screen, color, (px, py), i)
+
+    pygame.draw.circle(screen, (255,230,120), (px, py), 40)
 
 def main():
     pygame.init()
@@ -280,12 +325,12 @@ def main():
     generate_stars(settings, width, height)
     planets = create_planets()
     cx, cy = width // 2, height // 2
-    draw_sun(screen, cx, cy)
-
+    
     running = True
     while running:
         mouse = pygame.mouse.get_pos()
         click = False
+        dt = clock.tick(60) / 16.67
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -297,8 +342,20 @@ def main():
 
         draw_stars(screen, settings)
         for planet in planets:
-            planet.update()
-            planet.draw(screen, cx, cy)
+            planet.update(dt)
+        objects = []
+
+        for planet in planets:
+            x, y, z = planet.get_position()
+            objects.append(("planet", z, planet))
+        objects.append(("sun", 0, None))
+        objects.sort(key=get_depth, reverse=True)
+
+        for obj in objects:
+            if obj[0] == "sun":
+                draw_sun(screen, cx, cy)
+            else:
+                obj[2].draw(screen, cx, cy)
 
         changed = draw_panel(screen, font, width, height, mouse, click,
                              settings, scale)
