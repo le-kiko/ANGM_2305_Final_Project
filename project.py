@@ -1,7 +1,6 @@
 import pygame
 import math
 import random
-import time
 
 settings = {
     "num_planets": 5,
@@ -183,14 +182,10 @@ def draw_sphere(screen, cx, cy, world_x, world_y, world_z, rotation, radius,
             y += world_y
             z += world_z
 
-            nx = x / world_x
-            ny = y / world_y
-            nz = z / world_z
-            nlen = math.sqrt(nx**2 + ny**2 + nz**2)
-
-            nx = nx / nlen
-            ny = ny / nlen
-            nz = nz / nlen
+            nx = math.sin(theta) * math.cos(phi)
+            ny = math.cos(theta)
+            nz = math.sin(theta) * math.sin(phi)
+            nx, ny, nz = rotate_y(nx, ny, nz, rotation)
 
             light_x = -world_x
             light_y = -world_y
@@ -201,13 +196,15 @@ def draw_sphere(screen, cx, cy, world_x, world_y, world_z, rotation, radius,
             light_y /= light_length
             light_z /= light_length
                 
-            brightness = max(0, nx*light_x + ny*light_y + nz*light_z)
+            diffuse = max(0, nx * light_x + ny * light_y + nz * light_z)
+            ambient = 0.25
+            brightness = ambient + (0.75 * diffuse)
+            brightness = min(1, brightness)
             shaded = (int(color[0] * brightness), int(color[1] * brightness),
                       int(color[2] * brightness))
-            
-            if brightness > 0.01:
-                px, py, scale = add_perspective(x, y, z, cx, cy)
-                pygame.draw.circle(screen, shaded, (px, py), max(1, int(2 *
+                    
+            px, py, scale = add_perspective(x, y, z, cx, cy)
+            pygame.draw.circle(screen, shaded, (px, py), max(1, int(2 *
                                                                     scale)))
 
 class Moon:
@@ -218,9 +215,21 @@ class Moon:
     def update(self, dt):
         self.orbit_angle += 0.05 * dt
 
-    def draw(self, screen, cx, cy, planet_x, planet_y, planet_z, planet_rot):
+    def draw(self, screen, cx, cy, planet_x, planet_y, planet_z, planet_rot,
+             planet_radius):
         x = planet_x + self.orbit_radius * math.cos(self.orbit_angle)
         z = planet_z + self.orbit_radius * math.sin(self.orbit_angle)
+
+        moon_px, moon_py, moon_scale = add_perspective(x, planet_y, z, cx, cy)
+        planet_px, planet_py, planet_scale = add_perspective(planet_x, planet_y
+                                                            , planet_z, cx, cy)
+
+        dx = moon_px - planet_px
+        dy = moon_py - planet_py
+        dist = math.sqrt(dx**2 + dy**2)
+
+        if z > planet_z and dist < planet_radius * planet_scale:
+            return
 
         draw_sphere(screen, cx, cy, x, planet_y, z, planet_rot, 4,
                     (170,170,170))
@@ -257,24 +266,23 @@ class Planet:
 
     def draw(self, screen, cx, cy):
         x, y, z = self.get_position()
-        
-        draw_sphere(screen, cx, cy, x, y, z, self.rotation, self.radius,
-                    self.color)
 
         if settings["has_rings"] and self.has_ring:
             px, py, scale = add_perspective(x, y, z, cx, cy)
-            
             ring_w = int((self.radius + 16) * scale)
             ring_h = int((self.radius + 6) * scale)
             ring_rect = pygame.Rect(px - ring_w, py - ring_h // 2, ring_w * 2,
                                     ring_h)
 
             pygame.draw.ellipse(screen, (190,180,140), ring_rect, 2)
-            pygame.draw.ellipse(screen, (140,130,100), ring_rect.inflate(
-                    -10, -4), 1)
+            pygame.draw.ellipse(screen, (140,130,100), ring_rect.inflate(-10,
+                                                                        -4), 1)
+        
+        draw_sphere(screen, cx, cy, x, y, z, self.rotation, self.radius,
+                    self.color)
 
         for moon in self.moons:
-            moon.draw(screen, cx, cy, x, y, z, self.rotation)
+            moon.draw(screen, cx, cy, x, y, z, self.rotation, self.radius)
 
 def get_planet_depth(planet):
     return planet.get_position()[2]
