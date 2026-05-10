@@ -206,6 +206,20 @@ def draw_sphere(screen, cx, cy, world_x, world_y, world_z, rotation, radius,
             px, py, scale = add_perspective(x, y, z, cx, cy)
             pygame.draw.circle(screen, shaded, (px, py), max(1, int(2 *
                                                                     scale)))
+            
+def draw_ring(screen, px, py, scale, radius, tilt, color, front=False):
+    ring_w = int(radius * scale)
+    ring_h = max(1, int(radius * tilt * scale))
+    rect = pygame.Rect(px - ring_w, py - ring_h // 2, ring_w * 2, ring_h)
+
+    if front:
+        start_angle = 0
+        end_angle = math.pi
+    else:
+        start_angle = math.pi
+        end_angle = 2 * math.pi
+
+    pygame.draw.arc(screen, color, rect, start_angle, end_angle, 2)
 
 class Moon:
     def __init__(self, orbit_radius):
@@ -266,20 +280,26 @@ class Planet:
 
     def draw(self, screen, cx, cy):
         x, y, z = self.get_position()
+        px, py, scale = add_perspective(x, y, z, cx, cy)
+        base_r = self.radius + 12
+        tilt = 0.35
 
         if settings["has_rings"] and self.has_ring:
-            px, py, scale = add_perspective(x, y, z, cx, cy)
-            ring_w = int((self.radius + 16) * scale)
-            ring_h = int((self.radius + 6) * scale)
-            ring_rect = pygame.Rect(px - ring_w, py - ring_h // 2, ring_w * 2,
-                                    ring_h)
-
-            pygame.draw.ellipse(screen, (190,180,140), ring_rect, 2)
-            pygame.draw.ellipse(screen, (140,130,100), ring_rect.inflate(-10,
-                                                                        -4), 1)
+            for i in range(5):
+                color = (min(255, 170 + i * 5), min(255, 160 + i * 4),
+                         min(255, 130 + i * 3))
+                draw_ring(screen, px, py, scale, base_r + i * 2, tilt, color,
+                          front=False)
         
         draw_sphere(screen, cx, cy, x, y, z, self.rotation, self.radius,
                     self.color)
+        
+        if settings["has_rings"] and self.has_ring:
+            for i in range(5):
+                color = (min(255, 170 + i * 5), min(255, 160 + i * 4),
+                         min(255, 130 + i * 3))
+                draw_ring(screen, px, py, scale, base_r + i * 2, tilt, color,
+                          front=True)
 
         for moon in self.moons:
             moon.draw(screen, cx, cy, x, y, z, self.rotation, self.radius)
