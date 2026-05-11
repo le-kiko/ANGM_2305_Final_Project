@@ -33,20 +33,21 @@ def draw_stars(screen, settings):
 def set_color(settings):
     scheme = settings["color_schemes"][settings["color_scheme_index"]]
     if scheme == "Red":
-        return (random.randint(150,255), random.randint(50,100),
-                random.randint(50,100))
+        return (random.randint(140,255), random.randint(30,110),
+                random.randint(30,110))
     elif scheme == "Green":
-        return (random.randint(50,100), random.randint(150,255),
-                random.randint(50,100))
+        return (random.randint(40,180), random.randint(140,255),
+                random.randint(40,180))
     elif scheme == "Blue":
-        return (random.randint(50,100), random.randint(50,100),
-                random.randint(150,255))
+        return (random.randint(20,70), random.randint(60,160),
+                random.randint(140,255))
     elif scheme == "Purple":
-        return (random.randint(120,200), random.randint(50,100),
-                random.randint(150,255))
+        return (random.randint(100,180), random.randint(20,90),
+                random.randint(170,255))
     elif scheme == "Grey":
-        grey_color = random.randint(100,200)
-        return (grey_color, grey_color, grey_color)
+        grey = random.randint(90,240)
+        return (grey + random.randint(-10,10), grey + random.randint(-10,10),
+                grey + random.randint(-10,10))
     elif scheme == "Random":
         return (random.randint(50,255), random.randint(50,255),
                 random.randint(50,255))
@@ -81,61 +82,58 @@ def draw_panel(screen, font, width, height, mouse, click, settings, scale):
     panel_y = height - ui(80)
     pygame.draw.rect(screen, (25, 25, 25), (0, panel_y, width, ui(80)))
     
-    x = ui(30)
+    sections = 5
+    section_width = width // sections
 
     # -------- planets --------
-    screen.blit(font.render("Planets", True, (200,200,200)), (x, panel_y +
-                                                              ui(25)))
-    x += ui(80)
+    center_x = section_width * 0 + section_width // 2
+    screen.blit(font.render("Planets", True, (200,200,200)), (center_x - ui(90)
+                , panel_y + ui(25)))
 
-    if draw_button(screen, font, "-", x, panel_y + ui(20), ui(30), ui(30),
-                   mouse, click, scale):
+    if draw_button(screen, font, "-", center_x - ui(10), panel_y + ui(20),
+                   ui(30), ui(30), mouse, click, scale):
         settings["num_planets"] = max(3, settings["num_planets"] - 1)
         return "planets"
-    x += ui(40)
 
     screen.blit(font.render(str(settings["num_planets"]), True, (255,255,255)),
-                (x, panel_y + ui(25)))
-    x += ui(40)
+                (center_x + ui(35), panel_y + ui(25)))
 
-    if draw_button(screen, font, "+", x, panel_y + ui(20), ui(30), ui(30),
-                   mouse, click, scale):
+    if draw_button(screen, font, "+", center_x + ui(70), panel_y + ui(20),
+                   ui(30), ui(30), mouse, click, scale):
         settings["num_planets"] = min(10, settings["num_planets"] + 1)
         return "planets"
-    x += ui(60)
 
     # -------- rings --------
-    if draw_button(screen, font,
-                   f"Rings: {'ON' if settings['has_rings'] else 'OFF'}", x,
-                   panel_y + ui(20), ui(130), ui(30), mouse, click, scale):
+    center_x = section_width * 1 + section_width // 2
+    text = f"Rings: {'ON' if settings['has_rings'] else 'OFF'}"
+    if draw_button(screen, font, text, center_x - ui(130) // 2, panel_y +
+                   ui(20), ui(130), ui(30), mouse, click, scale):
         settings["has_rings"] = not settings["has_rings"]
         return "rings"
-    x += ui(150)
 
     # -------- moons --------
-    screen.blit(font.render("Moons", True, (200,200,200)), (x, panel_y +
-                                                            ui(25)))
-    x += ui(70)
+    center_x = section_width * 2 + section_width // 2
+    screen.blit(font.render("Moons", True, (200,200,200)), (center_x - ui(80),
+                                                            panel_y + ui(25)))
 
-    if draw_button(screen, font, "-", x, panel_y + ui(20), ui(30), ui(30),
-                   mouse, click, scale):
+    if draw_button(screen, font, "-", center_x - ui(10), panel_y + ui(20),
+                   ui(30), ui(30), mouse, click, scale):
         settings["num_moons"] = max(0, settings["num_moons"] - 1)
         return "moons"
-    x += ui(40)
 
     screen.blit(font.render(str(settings["num_moons"]), True, (255,255,255)),
-                (x, panel_y + ui(25)))
-    x += ui(40)
+                (center_x + ui(35), panel_y + ui(25)))
 
-    if draw_button(screen, font, "+", x, panel_y + ui(20), ui(30), ui(30),
-                   mouse, click, scale):
+    if draw_button(screen, font, "+", center_x + ui(70), panel_y + ui(20),
+                   ui(30), ui(30), mouse, click, scale):
         settings["num_moons"] = min(5, settings["num_moons"] + 1)
         return "moons"
-    x += ui(60)
 
     # -------- stars --------
-    if draw_button(screen, font, f"Stars: {settings['star_density']}", x,
-                   panel_y + ui(20), ui(150), ui(30), mouse, click, scale):
+    center_x = section_width * 3 + section_width // 2
+    if draw_button(screen, font, f"Stars: {settings['star_density']}", center_x
+                   - ui(95), panel_y + ui(20), ui(150), ui(30), mouse, click,
+                   scale):
         if settings["star_density"] == "Low":
             settings["star_density"] = "Medium"
         elif settings["star_density"] == "Medium":
@@ -143,12 +141,13 @@ def draw_panel(screen, font, width, height, mouse, click, settings, scale):
         else:
             settings["star_density"] = "Low"
         return "stars"
-    x += ui(170)
 
     # -------- color --------
+    center_x = section_width * 4 + section_width // 2
     current_scheme = settings["color_schemes"][settings["color_scheme_index"]]
-    if draw_button(screen, font, f"Theme: {current_scheme}", x, panel_y +
-                   ui(20), ui(160), ui(30), mouse, click, scale):
+    if draw_button(screen, font, f"Theme: {current_scheme}", center_x - ui(170)
+                   // 2, panel_y + ui(20), ui(170), ui(30), mouse, click,
+                   scale):
         settings["color_scheme_index"] = (settings["color_scheme_index"]
                                           + 1) % len(settings["color_schemes"])
         return "colors"
@@ -330,13 +329,17 @@ def create_planets():
 
 def draw_sun(screen, cx, cy):
     px, py, unused = add_perspective(0, 0, 0, cx, cy)
-
-    for i in range(60, 0, -1):
-        alpha = i / 60
-        color = (int(255 * alpha), int(180 * alpha), int(60 * alpha))
+    for i in range(65, 0, -1):
+        alpha = i / 65
+        color = (int(255 * alpha), int(210 * alpha), int(120 * alpha))
         pygame.draw.circle(screen, color, (px, py), i)
 
-    pygame.draw.circle(screen, (255,230,120), (px, py), 40)
+    pygame.draw.circle(screen, (255, 220, 140), (px, py), 48, 2)
+    pygame.draw.circle(screen, (255, 235, 170), (px, py), 54, 1)
+
+    pygame.draw.circle(screen, (255, 245, 170), (px, py), 40)
+    pygame.draw.circle(screen, (255, 250, 210), (px, py), 24)
+    pygame.draw.circle(screen, (255, 255, 240), (px, py), 10)
 
 def main():
     pygame.init()
@@ -349,6 +352,7 @@ def main():
                                      pygame.SCALED)
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", int(20 * scale))
+    title_font = pygame.font.SysFont("Arial", int(45 * scale), bold=True)
 
     generate_stars(settings, width, height)
     planets = create_planets()
@@ -367,6 +371,9 @@ def main():
                 click = True
 
         screen.fill((0,0,0))
+        title = title_font.render("SOLAR SYSTEM GENERATOR",True,(255,255,255))
+        title_rect = title.get_rect(center=(width // 2, int(100 * scale)))
+        screen.blit(title, title_rect)
 
         draw_stars(screen, settings)
         for planet in planets:
@@ -392,11 +399,19 @@ def main():
         elif changed == "rings":
             pass
         elif changed == "moons":
-            planets = create_planets()
+            for planet in planets:
+                planet.moons = []
+            remaining_moons = settings["num_moons"]
+
+            while remaining_moons > 0:
+                planet = random.choice(planets)
+                planet.moons.append(Moon(random.randint(30,60)))
+                remaining_moons -= 1
         elif changed == "stars":
             generate_stars(settings, width, height)
         elif changed == "colors":
-            planets = create_planets()
+            for planet in planets:
+                planet.color = set_color(settings)
         pygame.display.flip()
 
     pygame.quit()
