@@ -10,7 +10,8 @@ settings = {
     "color_schemes": ["Random", "Grey", "Red", "Green", "Blue", "Purple",
                       "Natural"],
     "color_scheme_index": 0,
-    "stars": []
+    "stars": [],
+    "exit": True
 }
 
 def update_stars(settings):
@@ -82,7 +83,7 @@ def draw_panel(screen, font, width, height, mouse, click, settings, scale):
     panel_y = height - ui(80)
     pygame.draw.rect(screen, (25, 25, 25), (0, panel_y, width, ui(80)))
     
-    sections = 5
+    sections = 6
     section_width = width // sections
 
     # -------- planets --------
@@ -151,6 +152,13 @@ def draw_panel(screen, font, width, height, mouse, click, settings, scale):
         settings["color_scheme_index"] = (settings["color_scheme_index"]
                                           + 1) % len(settings["color_schemes"])
         return "colors"
+    
+    # -------- exit --------
+    center_x = section_width * 5 + section_width // 2
+    if draw_button(screen, font, f"EXIT", center_x - ui(80) // 2, panel_y +
+                   ui(25), ui(60), ui(30), mouse, click, scale):
+        settings["exit"] = not settings["exit"]
+        return "exit"
 
     return None
 
@@ -419,6 +427,8 @@ def main():
         elif changed == "colors":
             for planet in planets:
                 planet.color = set_color(settings)
+        elif changed == "exit":
+            running = False
         pygame.display.flip()
 
     pygame.quit()

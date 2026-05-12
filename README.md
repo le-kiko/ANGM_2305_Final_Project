@@ -25,17 +25,33 @@ whether rings appear in the scene or not, the number of moons in the scene, the
 density of stars in the scene, and the color scheme applied to planets.
 
 ### Files
-The project.py file contains all the code needed to run the program. The
-mp3 file is the royalty-free sound used as ambient background noise while the
-program runs (source: [https://pixabay.com/music/ambient-space-ambient-435262/]
-(https://pixabay.com/music/ambient-space-ambient-435262/)).The requirements.txt
-file lists any pip-installable 3rd-party libraries used in the project. The
-proposal and README markdown files are included to fulfill project submission
-requirements.
-
-INCLUDE YOUTUBE VIDEO FILE
+- project.py: contains all the code needed to run the program
+- space-ambient.mp3: royalty-free sound used as ambient background noise as the
+program runs (source: <https://pixabay.com/music/ambient-space-ambient-435262/>
+)
+- requirements.txt: lists any pip-installable 3rd-party libraries used in the
+project
+- proposal.md: describes the features, challenges, outcomes, and milestones
+used to guide the project's development
+- README.md: describes the features, files, design considerations, and future
+areas of improvement for the project and contains links to the YouTube video
+and GitHub repository
+- pfda_finalProject_TatarAnna.mp4: 
 
 ### Design Considerations
+In my project design, I decided to draw a sun in the center of the system with
+multiple circles and create planets that revolve around the sun on individual
+trajectories. The system limits the number of planets that can be generated to
+between 3 and 10. It takes user input for whether rings appear in the scene or
+not and these rings are randomly applied to one or two planets in the scene.
+Similarly, users can control the number of moons, between 0 and 5, that are
+once again randomly applied to any of the planets in the scene. Users can also
+control star density between the three options of Low (100 stars), Medium (200
+stars), and High (400 stars). Planets can also be assigned a color scheme from
+the options of Random, Grey, Red, Green, Blue, Purple, and Natural. Finally,
+the EXIT button ends the program and takes the user out of the full-screen
+display.
+
 To be able to manage creating planets and moons based on user input, I decided
 to use classes so applying the different features to different planets could be
 done relatively easily. I also created the `add_perspective` function to add a
