@@ -1,7 +1,7 @@
 # PROJECT TITLE: Solar System Generator 
 
 ## Demo
-Demo Video: <>
+Demo Video: <https://youtu.be/HLVf5nrVYvg>
 
 ## GitHub Repository
 GitHub Repo: <https://github.com/le-kiko/ANGM_2305_Final_Project.git>

@@ -363,7 +363,7 @@ def main():
     screen = pygame.display.set_mode((width, height), pygame.FULLSCREEN |
                                      pygame.SCALED)
     pygame.mixer.music.load("space-ambient.mp3")
-    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.set_volume(0.25)
     pygame.mixer.music.play(-1)
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", int(20 * scale))
