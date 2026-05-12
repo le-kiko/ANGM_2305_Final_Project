@@ -1,4 +1,4 @@
-# Title: Solar System Scene Generator 
+# Title: Solar System Generator 
 
 ## Repository
 <https://github.com/le-kiko/ANGM_2305_Final_Project.git>
