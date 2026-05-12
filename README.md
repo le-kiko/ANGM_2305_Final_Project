@@ -36,7 +36,7 @@ used to guide the project's development
 - README.md: describes the features, files, design considerations, and future
 areas of improvement for the project and contains links to the YouTube video
 and GitHub repository
-- pfda_finalProject_TatarAnna.mp4: 
+- pfda_finalProject_TatarAnna.mp4: video demonstration of how the project runs
 
 ### Design Considerations
 In my project design, I decided to draw a sun in the center of the system with
